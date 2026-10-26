@@ -3,7 +3,8 @@ import java.util.Scanner;
 
 public class minibank {
 
-    record BankInfo(String name, String branch) {}
+    record BankInfo(String name, String branch) {
+    }
 
     enum MenuOption {
         OPEN_ACCOUNT,
@@ -17,6 +18,15 @@ public class minibank {
 
         BankInfo bank = new BankInfo("MiniBank", "CHARUSAT Branch");
 
+        Customer.Address address = new Customer.Address("Main Road", "Ahmedabad", "380001");
+
+        Customer customer = new Customer("Riya Shah", "riya@gmail.com", "9876543210", address);
+
+        System.out.println("Customer: " + customer.getName());
+        System.out.println("Address: " + customer.getAddress().getLine());
+        System.out.println("City: " + customer.getAddress().getCity());
+        System.out.println("Pincode: " + customer.getAddress().getPincode());
+
         System.out.println("================================");
         System.out.println("Welcome to " + bank.name());
         System.out.println("Branch: " + bank.branch());
@@ -24,9 +34,9 @@ public class minibank {
 
         // Practical 2: Create customers
         Customer c1 = new Customer(
-            "Riya Shah", "riya@gmail.com", "9876543210");
+                "Riya Shah", "riya@gmail.com", "9876543210");
         Customer c2 = new Customer(
-            "Aarav Patel", "aarav@gmail.com", "9876543211");
+                "Aarav Patel", "aarav@gmail.com", "9876543211");
 
         System.out.println("\nCustomer IDs:");
         System.out.println(c1.getCustomerId() + " - " + c1.getName());
@@ -34,9 +44,9 @@ public class minibank {
 
         // Practical 2: Create three accounts
         Account[] accounts = {
-            new Account("Riya Shah", 5000),
-            new Account("Aarav Patel"),
-            new Account("Meera Desai", 10000)
+                new Account("Riya Shah", 5000),
+                new Account("Aarav Patel"),
+                new Account("Meera Desai", 10000)
         };
 
         // Demonstrate deposits and withdrawals
@@ -49,10 +59,9 @@ public class minibank {
         System.out.println("\nAccount Balances:");
         for (Account account : accounts) {
             System.out.println(
-                account.getAccountNumber() + " | "
-                + account.getOwnerName() + " | Rs. "
-                + account.getBalance()
-            );
+                    account.getAccountNumber() + " | "
+                            + account.getOwnerName() + " | Rs. "
+                            + account.getBalance());
         }
 
         Scanner sc = new Scanner(System.in);
@@ -72,17 +81,17 @@ public class minibank {
 
             switch (choice) {
                 case 1 -> System.out.println(
-                    "Open Account - to be implemented in a later lab.");
+                        "Open Account - to be implemented in a later lab.");
                 case 2 -> System.out.println(
-                    "Deposit - to be implemented in a later lab.");
+                        "Deposit - to be implemented in a later lab.");
                 case 3 -> System.out.println(
-                    "Withdraw - to be implemented in a later lab.");
+                        "Withdraw - to be implemented in a later lab.");
                 case 4 -> System.out.println(
-                    "Transfer - to be implemented in a later lab.");
+                        "Transfer - to be implemented in a later lab.");
                 case 5 -> System.out.println(
-                    "Thank you for using MiniBank. Goodbye!");
+                        "Thank you for using MiniBank. Goodbye!");
                 default -> System.out.println(
-                    "Invalid choice. Please select 1 to 5.");
+                        "Invalid choice. Please select 1 to 5.");
             }
 
         } while (choice != 5);

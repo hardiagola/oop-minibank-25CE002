@@ -3,9 +3,35 @@ public class Customer {
     private String name;
     private String email;
     private String mobile;
+    private Address address;
     private final String customerId;
 
     private static long customerCounter = 100;
+
+    public static class Address {
+
+    private String line;
+    private String city;
+    private String pincode;
+
+    public Address(String line, String city, String pincode) {
+        this.line = line;
+        this.city = city;
+        this.pincode = pincode;
+    }
+
+    public String getLine() {
+        return line;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public String getPincode() {
+        return pincode;
+    }
+}
 
     private static String generateCustomerId() {
         customerCounter++;
@@ -17,7 +43,20 @@ public class Customer {
         this.name = name;
         this.email = email;
         this.mobile = mobile;
+        this.address = null;
     }
+
+    public Customer(String name, String email, String mobile, Address address) {
+    this.customerId = generateCustomerId();
+    this.name = name;
+    this.email = email;
+    this.mobile = mobile;
+    this.address = address;
+}
+
+    public Address getAddress() {
+    return address;
+}
 
     public String getName() {
         return name;
