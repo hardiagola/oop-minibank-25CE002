@@ -16,6 +16,7 @@ import static util.Validator.isValidEmail;
 
 import util.Validator;
 import util.StatementFormatter;
+import util.AnnotationValidator;
 
 public class MiniBank {
 
@@ -241,6 +242,25 @@ public class MiniBank {
         System.out.println("\n===== ACCOUNT STATEMENT =====");
         System.out.println(
                 StatementFormatter.buildStatement(accounts[0]));
+
+        // ========================================
+        // ANNOTATION VALIDATOR
+        // ========================================
+        System.out.println("\n===== ANNOTATION VALIDATOR =====");
+
+        // FixedDepositAccount with balance 0 violates @Positive (must be > 0)
+        FixedDepositAccount testAccount =
+                new FixedDepositAccount("Test User", 0);
+
+        String[] errors = AnnotationValidator.validate(testAccount);
+
+        if (errors.length == 0) {
+            System.out.println("No validation errors.");
+        } else {
+            for (String error : errors) {
+                System.out.println("Validation error -> " + error);
+            }
+        }
 
         // ========================================
         // ORIGINAL MENU
