@@ -1,7 +1,8 @@
+package model;
 
 public class SavingsAccount extends Account {
 
-    private long minBalance;
+    private final long minBalance;
 
     public SavingsAccount(
             String ownerName, long openingBalance, long minBalance) {
@@ -9,7 +10,7 @@ public class SavingsAccount extends Account {
 
         if (minBalance < 0 || openingBalance < minBalance) {
             throw new IllegalArgumentException(
-                    "Opening balance must be at least the minimum balance.");
+                    "Opening balance must meet minimum balance.");
         }
 
         this.minBalance = minBalance;

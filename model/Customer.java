@@ -1,12 +1,19 @@
+package model;
+
 public class Customer implements Cloneable {
 
     private String name;
     private String email;
     private String mobile;
-    private Address address;
     private final String customerId;
+    private Address address;
 
     private static long customerCounter = 100;
+
+    private static String generateCustomerId() {
+        customerCounter++;
+        return "CUST" + customerCounter;
+    }
 
     public static class Address {
 
@@ -31,31 +38,24 @@ public class Customer implements Cloneable {
         public String getPincode() {
             return pincode;
         }
-    }
 
-    private static String generateCustomerId() {
-        customerCounter++;
-        return "CUST" + customerCounter;
+        @Override
+        public String toString() {
+            return line + ", " + city + " - " + pincode;
+        }
     }
 
     public Customer(String name, String email, String mobile) {
-        this.customerId = generateCustomerId();
-        this.name = name;
-        this.email = email;
-        this.mobile = mobile;
-        this.address = null;
+        this(name, email, mobile, null);
     }
 
-    public Customer(String name, String email, String mobile, Address address) {
+    public Customer(String name, String email, String mobile,
+                    Address address) {
         this.customerId = generateCustomerId();
         this.name = name;
         this.email = email;
         this.mobile = mobile;
         this.address = address;
-    }
-
-    public Address getAddress() {
-        return address;
     }
 
     public String getName() {
@@ -74,6 +74,10 @@ public class Customer implements Cloneable {
         return customerId;
     }
 
+    public Address getAddress() {
+        return address;
+    }
+
     @Override
     public Customer clone() {
         try {
@@ -87,7 +91,6 @@ public class Customer implements Cloneable {
             }
 
             return copy;
-
         } catch (CloneNotSupportedException e) {
             throw new AssertionError(e);
         }

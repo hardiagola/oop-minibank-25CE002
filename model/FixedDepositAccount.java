@@ -1,5 +1,6 @@
+package model;
 
-public class FixedDepositAccount extends Account {
+public class FixedDepositAccount extends Account implements Premium {
 
     public FixedDepositAccount(String ownerName, long openingBalance) {
         super(ownerName, openingBalance);

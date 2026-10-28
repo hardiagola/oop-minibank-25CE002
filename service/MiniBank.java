@@ -1,5 +1,21 @@
+package service;
 
 import java.util.Scanner;
+
+import model.Account;
+import model.Customer;
+import model.SavingsAccount;
+import model.CurrentAccount;
+import model.FixedDepositAccount;
+import model.Premium;
+import model.WithdrawRule;
+import model.Command;
+
+// Static import demonstration
+import static util.Validator.isValidEmail;
+
+import util.Validator;
+import util.StatementFormatter;
 
 public class MiniBank {
 
@@ -20,7 +36,8 @@ public class MiniBank {
         // ========================================
         // PRACTICAL 1: BANK HEADER
         // ========================================
-        BankInfo bank = new BankInfo("MiniBank", "CHARUSAT Branch");
+        BankInfo bank = new BankInfo(
+                "MiniBank", "CHARUSAT Branch");
 
         System.out.println("================================");
         System.out.println("Welcome to " + bank.name());
@@ -65,94 +82,117 @@ public class MiniBank {
                         clonedCustomer.getCustomerId()));
 
         // ========================================
-        // PRACTICAL 2 & 3: ACCOUNTS
+        // PRACTICAL: ACCOUNT TYPES AND POLYMORPHISM
         // ========================================
-        // Account is now abstract, so use its subclasses.
         Account[] accounts = {
                 new SavingsAccount("Riya Shah", 5000, 1000),
                 new CurrentAccount("Aarav Patel", 1000, 5000),
                 new FixedDepositAccount("Meera Desai", 10000)
         };
 
-        System.out.println("\n===== INITIAL BALANCES =====");
+        System.out.println("\n===== INITIAL ACCOUNT DETAILS =====");
+
         for (Account account : accounts) {
             System.out.println(account);
         }
 
-        // Demonstrate deposits and withdrawals
+        // ========================================
+        // TRANSACTABLE INTERFACE
+        // ========================================
         System.out.println("\n===== TRANSACTIONS =====");
 
         accounts[0].deposit(2000);
-        System.out.println("Savings withdrawal successful: "
+        System.out.println("Savings withdrawal: "
                 + accounts[0].withdraw(1000));
 
         accounts[1].deposit(3000);
-        System.out.println("Current withdrawal successful: "
+        System.out.println("Current withdrawal: "
                 + accounts[1].withdraw(500));
 
-        System.out.println("Fixed deposit withdrawal successful: "
-                + accounts[2].withdraw(12000));
+        System.out.println("Fixed deposit withdrawal: "
+                + accounts[2].withdraw(1000));
 
-        // Practical 3: toString()
-        System.out.println("\n===== ACCOUNT DETAILS =====");
-        for (Account account : accounts) {
-            System.out.println(account.toString());
-        }
-
-        // Practical 3: equals()
+        // ========================================
+        // PRACTICAL 3: equals() AND instanceof
+        // ========================================
         System.out.println("\n===== ACCOUNT COMPARISON =====");
+
         System.out.println("Account 1 equals Account 2: "
                 + accounts[0].equals(accounts[1]));
 
         System.out.println("Account 1 equals itself: "
                 + accounts[0].equals(accounts[0]));
 
-        // Practical 3: instanceof
-        System.out.println("\n===== INSTANCEOF TEST =====");
         Object obj = accounts[0];
 
         if (obj instanceof Account) {
             System.out.println("The object is an Account.");
-        } else {
-            System.out.println("The object is not an Account.");
         }
 
         // ========================================
-        // LATEST PRACTICAL: ABSTRACTION & POLYMORPHISM
+        // INTERESTBEARING DEFAULT METHOD
         // ========================================
-        System.out.println("\n===== ACCOUNT TYPES AND INTEREST =====");
+        System.out.println("\n===== YEARLY INTEREST =====");
 
         for (Account account : accounts) {
             System.out.println("Owner: " + account.getOwnerName());
-            System.out.println("Account: " + account.getAccountNumber());
             System.out.println("Interest rate: "
                     + account.interestRate() + "%");
+            System.out.printf("Yearly interest: Rs. %.2f%n",
+                    account.yearlyInterest());
         }
 
-        System.out.println("\n===== ACCOUNT TYPE CHECK =====");
+        // ========================================
+        // WITHDRAWRULE: ANONYMOUS CLASS
+        // ========================================
+        System.out.println("\n===== WITHDRAW RULE: ANONYMOUS CLASS =====");
+
+        WithdrawRule anonymousRule = new WithdrawRule() {
+            @Override
+            public boolean allow(Account account, long amount) {
+                return account.isActive()
+                        && account.canWithdraw(amount);
+            }
+        };
+
+        System.out.println("Allow savings withdrawal of Rs. 500: "
+                + anonymousRule.allow(accounts[0], 500));
+
+        // ========================================
+        // WITHDRAWRULE: LAMBDA EXPRESSION
+        // ========================================
+        System.out.println("\n===== WITHDRAW RULE: LAMBDA =====");
+
+        WithdrawRule lambdaRule =
+                (account, amount) ->
+                        account.isActive()
+                        && amount > 0
+                        && amount <= 2000
+                        && account.canWithdraw(amount);
+
+        System.out.println("Allow withdrawal of Rs. 1500: "
+                + lambdaRule.allow(accounts[0], 1500));
+
+        System.out.println("Allow withdrawal of Rs. 3000: "
+                + lambdaRule.allow(accounts[0], 3000));
+
+        // ========================================
+        // PREMIUM MARKER INTERFACE
+        // ========================================
+        System.out.println("\n===== PREMIUM ACCOUNT CHECK =====");
 
         for (Account account : accounts) {
-            if (account instanceof SavingsAccount savings) {
-                System.out.println(
-                        savings.getOwnerName()
-                        + " has minimum balance Rs. "
-                        + savings.getMinBalance());
-
-            } else if (account instanceof CurrentAccount current) {
-                System.out.println(
-                        current.getOwnerName()
-                        + " has overdraft limit Rs. "
-                        + current.getOverdraftLimit());
-
-            } else if (account instanceof FixedDepositAccount) {
-                System.out.println(
-                        account.getOwnerName()
-                        + " has a locked fixed deposit.");
+            if (account instanceof Premium) {
+                System.out.println(account.getOwnerName()
+                        + " has a Premium account.");
+            } else {
+                System.out.println(account.getOwnerName()
+                        + " does not have a Premium account.");
             }
         }
 
         // ========================================
-        // PRACTICAL: VALIDATOR TESTS
+        // VALIDATOR TESTS
         // ========================================
         System.out.println("\n===== VALIDATOR TESTS =====");
 
@@ -161,10 +201,11 @@ public class MiniBank {
         System.out.println("Invalid mobile: "
                 + Validator.isValidMobile("12345"));
 
+        // Static import: no Validator. prefix needed
         System.out.println("Valid email: "
-                + Validator.isValidEmail("riya@gmail.com"));
+                + isValidEmail("riya@gmail.com"));
         System.out.println("Invalid email: "
-                + Validator.isValidEmail("riya@"));
+                + isValidEmail("riya@"));
 
         System.out.println("Valid PAN: "
                 + Validator.isValidPan("ABCDE1234F"));
@@ -177,7 +218,7 @@ public class MiniBank {
                 + Validator.isValidIfsc("SBI123"));
 
         // ========================================
-        // PRACTICAL: COMMAND PARSING
+        // COMMAND PARSING
         // ========================================
         System.out.println("\n===== COMMAND PARSER =====");
 
@@ -195,14 +236,14 @@ public class MiniBank {
         }
 
         // ========================================
-        // PRACTICAL: ACCOUNT STATEMENT
+        // ACCOUNT STATEMENT
         // ========================================
         System.out.println("\n===== ACCOUNT STATEMENT =====");
         System.out.println(
                 StatementFormatter.buildStatement(accounts[0]));
 
         // ========================================
-        // PRACTICAL 1: ORIGINAL MENU
+        // ORIGINAL MENU
         // ========================================
         Scanner sc = new Scanner(System.in);
         int choice;
@@ -244,7 +285,6 @@ public class MiniBank {
         } while (choice != 5);
 
         System.out.println("Hardi Agola - 25CE002");
-
         sc.close();
     }
 }

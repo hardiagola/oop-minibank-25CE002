@@ -1,8 +1,11 @@
+package service;
+
+import model.Command;
+import model.TransactionType;
 
 public class CommandParser {
 
     public static Command parse(String line) {
-
         if (line == null || line.isBlank()) {
             throw new IllegalArgumentException(
                     "Command cannot be empty.");
@@ -27,6 +30,11 @@ public class CommandParser {
 
         String accountNumber = parts[1];
 
+        if (!accountNumber.matches("AC[0-9]{4}")) {
+            throw new IllegalArgumentException(
+                    "Invalid account number format.");
+        }
+
         long amount;
 
         try {
@@ -34,11 +42,6 @@ public class CommandParser {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(
                     "Amount must be a whole number.");
-        }
-
-        if (!accountNumber.matches("AC[0-9]{4}")) {
-            throw new IllegalArgumentException(
-                    "Invalid account number format.");
         }
 
         if (amount <= 0) {

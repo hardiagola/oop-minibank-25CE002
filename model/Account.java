@@ -1,7 +1,9 @@
+package model;
 
 import java.util.Objects;
 
-public abstract class Account {
+public abstract class Account
+        implements Transactable, InterestBearing {
 
     private final String accountNumber;
     private String ownerName;
@@ -15,8 +17,12 @@ public abstract class Account {
         return String.format("AC%04d", accountCounter);
     }
 
-    // Constructor with owner name and opening balance
     public Account(String ownerName, long openingBalance) {
+        if (ownerName == null || ownerName.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Owner name cannot be empty.");
+        }
+
         if (openingBalance < 0) {
             throw new IllegalArgumentException(
                     "Opening balance cannot be negative.");
@@ -28,28 +34,24 @@ public abstract class Account {
         this.active = true;
     }
 
-    // Constructor with owner name only
     public Account(String ownerName) {
         this(ownerName, 0);
     }
 
-    // Abstract methods implemented by subclasses
-    public abstract double interestRate();
-
     public abstract boolean canWithdraw(long amount);
 
-    // Deposit money
+    @Override
     public void deposit(long amount) {
-        if (active && amount > 0) {
+        if (active && amount > 0
+                && balance <= Long.MAX_VALUE - amount) {
             balance += amount;
             System.out.println("Deposited: Rs. " + amount);
         } else {
-            System.out.println(
-                    "Invalid deposit or inactive account.");
+            System.out.println("Invalid deposit or inactive account.");
         }
     }
 
-    // Withdraw money according to subclass rules
+    @Override
     public boolean withdraw(long amount) {
         if (active && amount > 0 && canWithdraw(amount)) {
             balance -= amount;
@@ -61,7 +63,6 @@ public abstract class Account {
         return false;
     }
 
-    // Getter methods
     public String getAccountNumber() {
         return accountNumber;
     }
@@ -78,7 +79,6 @@ public abstract class Account {
         return active;
     }
 
-    // Practical 3: Readable account details
     @Override
     public String toString() {
         return "Account{accountNumber='" + accountNumber
@@ -86,18 +86,16 @@ public abstract class Account {
                 + "', balance=" + balance + "}";
     }
 
-    // Accounts are equal when account numbers match
     @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
 
-        if (!(o instanceof Account)) {
+        if (!(o instanceof Account other)) {
             return false;
         }
 
-        Account other = (Account) o;
         return accountNumber.equals(other.accountNumber);
     }
 
