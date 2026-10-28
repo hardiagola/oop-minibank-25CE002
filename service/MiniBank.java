@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import util.StatePersister;
 import util.TransactionLog;
 import util.ReportGenerator;
+import util.Repository;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -729,6 +730,45 @@ public class MiniBank {
         tp2.stop();
 
         // ========================================
+        // REPOSITORY<T> (Generics + Reflection)
+        // ========================================
+        System.out.println("\n===== REPOSITORY<Account> =====");
+
+        Repository<Account> repo = new Repository<>();
+
+        // saveAll() — @SafeVarargs, saves all three demo accounts at once
+        repo.saveAll(accounts[0], accounts[1], accounts[2]);
+        System.out.println("Saved " + repo.size() + " accounts via saveAll().");
+
+        // findById() — key resolved via @Id reflection
+        String targetId = accounts[0].getAccountNumber();
+        Account found = repo.findById(targetId);
+        System.out.println("findById(\"" + targetId + "\"): " + found);
+
+        // findAll() — print every stored account
+        System.out.println("\n--- All accounts in Repository ---");
+        for (Account acc : repo.findAll()) {
+            System.out.printf("  %-10s | %-20s | Rs. %,d%n",
+                    acc.getAccountNumber(),
+                    acc.getOwnerName(),
+                    acc.getBalance());
+        }
+
+        // delete()
+        boolean removed = repo.delete(accounts[1].getAccountNumber());
+        System.out.println("\ndelete(\"" + accounts[1].getAccountNumber() + "\"): "
+                + removed + " | remaining: " + repo.size());
+
+        // Bounded type parameter: <N extends Number> average
+        Long[] balances = new Long[accounts.length];
+        for (int i = 0; i < accounts.length; i++) {
+            balances[i] = accounts[i].getBalance();
+        }
+        double avg = Repository.average(balances);
+        System.out.printf("Average balance (bounded <N extends Number>): Rs. %.2f%n",
+                avg);
+
+        // ========================================
         // ORIGINAL MENU
         // ========================================
         Scanner sc = new Scanner(System.in);
@@ -744,28 +784,111 @@ public class MiniBank {
             System.out.print("Enter your choice: ");
 
             if (!sc.hasNextInt()) {
-                System.out.println(
-                        "Please enter a number from 1 to 5.");
+                System.out.println("Please enter a number from 1 to 5.");
                 sc.nextLine();
                 choice = 0;
                 continue;
             }
 
             choice = sc.nextInt();
+            sc.nextLine(); // flush leftover newline after nextInt()
 
             switch (choice) {
-                case 1 -> System.out.println(
-                        "Open Account - to be implemented in a later lab.");
-                case 2 -> System.out.println(
-                        "Deposit - to be implemented in a later lab.");
-                case 3 -> System.out.println(
-                        "Withdraw - to be implemented in a later lab.");
-                case 4 -> System.out.println(
-                        "Transfer - to be implemented in a later lab.");
-                case 5 -> System.out.println(
-                        "Thank you for using MiniBank. Goodbye!");
-                default -> System.out.println(
-                        "Invalid choice. Please select 1 to 5.");
+
+                case 1 -> {
+                    // Open Account
+                    System.out.print("Enter owner name       : ");
+                    String ownerName = sc.nextLine().trim();
+                    System.out.println("Account type: 1.Savings  2.Current  3.Fixed Deposit");
+                    System.out.print("Choose type (1/2/3)    : ");
+                    int accType = sc.nextInt(); sc.nextLine();
+                    System.out.print("Opening balance (Rs.)  : ");
+                    long openBal = sc.nextLong(); sc.nextLine();
+                    try {
+                        Account newAcc = switch (accType) {
+                            case 2  -> new CurrentAccount(ownerName, openBal, 1000);
+                            case 3  -> new FixedDepositAccount(ownerName, openBal);
+                            default -> new SavingsAccount(ownerName, openBal, 0);
+                        };
+                        store.add(newAcc);
+                        System.out.println("Account created: " + newAcc.getAccountNumber()
+                                + " | Owner: " + newAcc.getOwnerName()
+                                + " | Balance: Rs. " + newAcc.getBalance());
+                    } catch (IllegalArgumentException e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                }
+
+                case 2 -> {
+                    // Deposit
+                    System.out.print("Enter account number : ");
+                    String depNum = sc.nextLine().trim();
+                    Account depAcc = store.get(depNum);
+                    if (depAcc == null) {
+                        System.out.println("Account not found: " + depNum);
+                    } else {
+                        System.out.print("Enter deposit amount : Rs. ");
+                        long depAmt = sc.nextLong(); sc.nextLine();
+                        try {
+                            depAcc.deposit(depAmt);
+                            store.logTransaction("DEPOSIT:" + depAmt + " -> " + depNum);
+                            System.out.println("Success! New balance: Rs. " + depAcc.getBalance());
+                        } catch (InvalidAmountException e) {
+                            System.out.println("Deposit failed: " + e.getMessage());
+                        }
+                    }
+                }
+
+                case 3 -> {
+                    // Withdraw
+                    System.out.print("Enter account number : ");
+                    String wdNum = sc.nextLine().trim();
+                    Account wdAcc = store.get(wdNum);
+                    if (wdAcc == null) {
+                        System.out.println("Account not found: " + wdNum);
+                    } else {
+                        System.out.print("Enter withdrawal amount : Rs. ");
+                        long wdAmt = sc.nextLong(); sc.nextLine();
+                        try {
+                            wdAcc.withdraw(wdAmt);
+                            store.logTransaction("WITHDRAW:" + wdAmt + " <- " + wdNum);
+                            System.out.println("Success! New balance: Rs. " + wdAcc.getBalance());
+                        } catch (InsufficientFundsException | InvalidAmountException e) {
+                            System.out.println("Withdrawal failed: " + e.getMessage());
+                        }
+                    }
+                }
+
+                case 4 -> {
+                    // Transfer
+                    System.out.print("From account number : ");
+                    String fromNum = sc.nextLine().trim();
+                    System.out.print("To   account number : ");
+                    String toNum   = sc.nextLine().trim();
+                    Account fromAcc = store.get(fromNum);
+                    Account toAcc   = store.get(toNum);
+                    if (fromAcc == null) {
+                        System.out.println("Source account not found: " + fromNum);
+                    } else if (toAcc == null) {
+                        System.out.println("Destination account not found: " + toNum);
+                    } else {
+                        System.out.print("Transfer amount : Rs. ");
+                        long trAmt = sc.nextLong(); sc.nextLine();
+                        try {
+                            fromAcc.transfer(toAcc, trAmt);
+                            store.logTransaction("TRANSFER:" + trAmt + " " + fromNum + "->" + toNum);
+                            System.out.println("Transfer successful.");
+                            System.out.println("  " + fromNum + " balance: Rs. " + fromAcc.getBalance());
+                            System.out.println("  " + toNum   + " balance: Rs. " + toAcc.getBalance());
+                        } catch (BankException e) {
+                            System.out.println("Transfer failed: " + e.getMessage());
+                        }
+                    }
+                }
+
+                case 5 -> System.out.println("Thank you for using MiniBank. Goodbye!");
+
+                default -> System.out.println("Invalid choice. Please select 1 to 5.");
             }
 
         } while (choice != 5);
@@ -773,4 +896,4 @@ public class MiniBank {
         System.out.println("Hardi Agola - 25CE002");
         sc.close();
     }
-}
+}
