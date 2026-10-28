@@ -67,10 +67,11 @@ public class MiniBank {
         // ========================================
         // PRACTICAL 2 & 3: ACCOUNTS
         // ========================================
+        // Account is now abstract, so use its subclasses.
         Account[] accounts = {
-                new Account("Riya Shah", 5000),
-                new Account("Aarav Patel"),
-                new Account("Meera Desai", 10000)
+                new SavingsAccount("Riya Shah", 5000, 1000),
+                new CurrentAccount("Aarav Patel", 1000, 5000),
+                new FixedDepositAccount("Meera Desai", 10000)
         };
 
         System.out.println("\n===== INITIAL BALANCES =====");
@@ -82,14 +83,15 @@ public class MiniBank {
         System.out.println("\n===== TRANSACTIONS =====");
 
         accounts[0].deposit(2000);
-        accounts[0].withdraw(1000);
+        System.out.println("Savings withdrawal successful: "
+                + accounts[0].withdraw(1000));
 
         accounts[1].deposit(3000);
-        accounts[1].withdraw(500);
+        System.out.println("Current withdrawal successful: "
+                + accounts[1].withdraw(500));
 
-        boolean result = accounts[2].withdraw(12000);
-        System.out.println("Third account withdrawal successful: "
-                + result);
+        System.out.println("Fixed deposit withdrawal successful: "
+                + accounts[2].withdraw(12000));
 
         // Practical 3: toString()
         System.out.println("\n===== ACCOUNT DETAILS =====");
@@ -116,7 +118,41 @@ public class MiniBank {
         }
 
         // ========================================
-        // LATEST PRACTICAL: VALIDATOR TESTS
+        // LATEST PRACTICAL: ABSTRACTION & POLYMORPHISM
+        // ========================================
+        System.out.println("\n===== ACCOUNT TYPES AND INTEREST =====");
+
+        for (Account account : accounts) {
+            System.out.println("Owner: " + account.getOwnerName());
+            System.out.println("Account: " + account.getAccountNumber());
+            System.out.println("Interest rate: "
+                    + account.interestRate() + "%");
+        }
+
+        System.out.println("\n===== ACCOUNT TYPE CHECK =====");
+
+        for (Account account : accounts) {
+            if (account instanceof SavingsAccount savings) {
+                System.out.println(
+                        savings.getOwnerName()
+                        + " has minimum balance Rs. "
+                        + savings.getMinBalance());
+
+            } else if (account instanceof CurrentAccount current) {
+                System.out.println(
+                        current.getOwnerName()
+                        + " has overdraft limit Rs. "
+                        + current.getOverdraftLimit());
+
+            } else if (account instanceof FixedDepositAccount) {
+                System.out.println(
+                        account.getOwnerName()
+                        + " has a locked fixed deposit.");
+            }
+        }
+
+        // ========================================
+        // PRACTICAL: VALIDATOR TESTS
         // ========================================
         System.out.println("\n===== VALIDATOR TESTS =====");
 
@@ -141,7 +177,7 @@ public class MiniBank {
                 + Validator.isValidIfsc("SBI123"));
 
         // ========================================
-        // LATEST PRACTICAL: COMMAND PARSING
+        // PRACTICAL: COMMAND PARSING
         // ========================================
         System.out.println("\n===== COMMAND PARSER =====");
 
@@ -159,7 +195,7 @@ public class MiniBank {
         }
 
         // ========================================
-        // LATEST PRACTICAL: ACCOUNT STATEMENT
+        // PRACTICAL: ACCOUNT STATEMENT
         // ========================================
         System.out.println("\n===== ACCOUNT STATEMENT =====");
         System.out.println(
@@ -181,7 +217,8 @@ public class MiniBank {
             System.out.print("Enter your choice: ");
 
             if (!sc.hasNextInt()) {
-                System.out.println("Please enter a number from 1 to 5.");
+                System.out.println(
+                        "Please enter a number from 1 to 5.");
                 sc.nextLine();
                 choice = 0;
                 continue;
