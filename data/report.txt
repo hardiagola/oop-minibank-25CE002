@@ -1,0 +1,12 @@
+===== END-OF-DAY SUMMARY REPORT =====
+Generated : 2026-10-28 13:30:42
+
+--- transactions.log ---
+  Size          : 140 bytes
+  Last modified : 2026-10-28T08:00:42.4822578Z
+
+===== TOTALS =====
+Total Deposits   : Rs. 13000
+Total Withdrawals: Rs. 1600
+Net Change       : Rs. 11400
+=====================================

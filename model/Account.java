@@ -1,5 +1,8 @@
 package model;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.util.Objects;
 
 import model.annotation.Id;
@@ -9,7 +12,10 @@ import exception.InsufficientFundsException;
 import exception.InvalidAmountException;
 
 public abstract class Account
-        implements Transactable, InterestBearing {
+        implements Transactable, InterestBearing, Serializable,
+                   Comparable<Account> {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     private final String accountNumber;
@@ -17,6 +23,9 @@ public abstract class Account
     @Positive
     private long balance;
     private boolean active;
+
+    // transient: Object is not Serializable; readObject() reinitialises it
+    private transient Object lock = new Object();
 
     private static long accountCounter = 0;
 
@@ -54,15 +63,18 @@ public abstract class Account
             throw new InvalidAmountException(
                     "Deposit amount must be greater than zero.");
         }
-        if (!active) {
-            throw new InvalidAmountException("Account is inactive.");
+        synchronized (lock) {
+            if (!active) {
+                throw new InvalidAmountException("Account is inactive.");
+            }
+            if (balance > Long.MAX_VALUE - amount) {
+                throw new InvalidAmountException(
+                        "Deposit would overflow balance.");
+            }
+            balance += amount;
         }
-        if (balance > Long.MAX_VALUE - amount) {
-            throw new InvalidAmountException(
-                    "Deposit would overflow balance.");
-        }
-        balance += amount;
-        System.out.println("Deposited: Rs. " + amount);
+        System.out.println(Thread.currentThread().getName()
+                + " deposited: Rs. " + amount);
     }
 
     @Override
@@ -72,16 +84,19 @@ public abstract class Account
             throw new InvalidAmountException(
                     "Withdrawal amount must be greater than zero.");
         }
-        if (!active) {
-            throw new InvalidAmountException("Account is inactive.");
+        synchronized (lock) {
+            if (!active) {
+                throw new InvalidAmountException("Account is inactive.");
+            }
+            if (!canWithdraw(amount)) {
+                long shortfall = Math.max(0, amount - balance);
+                throw new InsufficientFundsException(
+                        "Insufficient funds for withdrawal.", shortfall);
+            }
+            balance -= amount;
         }
-        if (!canWithdraw(amount)) {
-            long shortfall = Math.max(0, amount - balance);
-            throw new InsufficientFundsException(
-                    "Insufficient funds for withdrawal.", shortfall);
-        }
-        balance -= amount;
-        System.out.println("Withdrawn: Rs. " + amount);
+        System.out.println(Thread.currentThread().getName()
+                + " withdrew: Rs. " + amount);
     }
 
     public void transfer(Account to, long amount) throws BankException {
@@ -134,5 +149,18 @@ public abstract class Account
     @Override
     public int hashCode() {
         return Objects.hash(accountNumber);
+    }
+
+    // Natural ordering by account number (AC0001 < AC0002 …)
+    @Override
+    public int compareTo(Account other) {
+        return this.accountNumber.compareTo(other.accountNumber);
+    }
+
+    // Reinitialise the transient lock after deserialization
+    private void readObject(ObjectInputStream ois)
+            throws IOException, ClassNotFoundException {
+        ois.defaultReadObject();
+        lock = new Object();
     }
 }
