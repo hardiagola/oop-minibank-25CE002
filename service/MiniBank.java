@@ -18,6 +18,10 @@ import util.Validator;
 import util.StatementFormatter;
 import util.AnnotationValidator;
 
+import exception.BankException;
+import exception.InsufficientFundsException;
+import exception.InvalidAmountException;
+
 public class MiniBank {
 
     // Practical 1: Bank information record
@@ -32,7 +36,22 @@ public class MiniBank {
         EXIT
     }
 
-    public static void main(String[] args) {
+    // AutoCloseable resource for try-with-resources demo
+    static class BankSession implements AutoCloseable {
+        private final String sessionId;
+
+        BankSession(String sessionId) {
+            this.sessionId = sessionId;
+            System.out.println("Session opened: " + sessionId);
+        }
+
+        @Override
+        public void close() {
+            System.out.println("Session closed: " + sessionId);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
 
         // ========================================
         // PRACTICAL 1: BANK HEADER
@@ -102,16 +121,47 @@ public class MiniBank {
         // ========================================
         System.out.println("\n===== TRANSACTIONS =====");
 
-        accounts[0].deposit(2000);
-        System.out.println("Savings withdrawal: "
-                + accounts[0].withdraw(1000));
+        // Savings: deposit then withdraw — success case
+        try {
+            accounts[0].deposit(2000);
+            accounts[0].withdraw(1000);
+            System.out.println("Savings withdrawal: success");
+        } catch (InsufficientFundsException e) {
+            System.out.println("Insufficient funds: shortfall Rs. "
+                    + e.getShortfall());
+        } catch (InvalidAmountException e) {
+            System.out.println("Invalid amount: " + e.getMessage());
+        } finally {
+            System.out.println("Savings transaction done.");
+        }
 
-        accounts[1].deposit(3000);
-        System.out.println("Current withdrawal: "
-                + accounts[1].withdraw(500));
+        // Current account: deposit then withdraw — success case
+        try {
+            accounts[1].deposit(3000);
+            accounts[1].withdraw(500);
+            System.out.println("Current withdrawal: success");
+        } catch (InsufficientFundsException e) {
+            System.out.println("Insufficient funds: shortfall Rs. "
+                    + e.getShortfall());
+        } catch (InvalidAmountException e) {
+            System.out.println("Invalid amount: " + e.getMessage());
+        } finally {
+            System.out.println("Current transaction done.");
+        }
 
-        System.out.println("Fixed deposit withdrawal: "
-                + accounts[2].withdraw(1000));
+        // Fixed deposit: withdrawal always fails — InsufficientFundsException
+        try {
+            accounts[2].withdraw(1000);
+            System.out.println("Fixed deposit withdrawal: success");
+        } catch (InsufficientFundsException e) {
+            System.out.println("Fixed deposit withdrawal failed: "
+                    + e.getMessage()
+                    + " (shortfall Rs. " + e.getShortfall() + ")");
+        } catch (InvalidAmountException e) {
+            System.out.println("Invalid amount: " + e.getMessage());
+        } finally {
+            System.out.println("FD transaction done.");
+        }
 
         // ========================================
         // PRACTICAL 3: equals() AND instanceof
@@ -260,6 +310,58 @@ public class MiniBank {
             for (String error : errors) {
                 System.out.println("Validation error -> " + error);
             }
+        }
+
+        // ========================================
+        // TRANSFER (try-catch-finally + re-throw)
+        // ========================================
+        System.out.println("\n===== TRANSFER =====");
+
+        // Valid transfer from savings to current
+        try {
+            accounts[0].transfer(accounts[1], 500);
+            System.out.println("Transfer successful.");
+        } catch (BankException e) {
+            System.out.println("Transfer failed: " + e.getMessage());
+        }
+
+        // Transfer that fails (FD account cannot withdraw)
+        try {
+            accounts[2].transfer(accounts[0], 500);
+            System.out.println("Transfer successful.");
+        } catch (BankException e) {
+            System.out.println("Transfer failed: " + e.getMessage());
+        }
+
+        // ========================================
+        // INVALID AMOUNT (InvalidAmountException demo)
+        // ========================================
+        System.out.println("\n===== INVALID AMOUNT DEMO =====");
+
+        try {
+            accounts[0].deposit(-500);
+        } catch (InvalidAmountException e) {
+            System.out.println("Deposit error: " + e.getMessage());
+        }
+
+        try {
+            accounts[0].withdraw(0);
+        } catch (InsufficientFundsException e) {
+            System.out.println("Withdraw error: " + e.getMessage());
+        } catch (InvalidAmountException e) {
+            System.out.println("Withdraw error: " + e.getMessage());
+        }
+
+        // ========================================
+        // TRY-WITH-RESOURCES (AutoCloseable)
+        // ========================================
+        System.out.println("\n===== TRY-WITH-RESOURCES =====");
+
+        try (BankSession session = new BankSession("TXN-DEPOSIT-001")) {
+            accounts[0].deposit(1000);
+            System.out.println("Deposited Rs. 1000 inside session.");
+        } catch (InvalidAmountException e) {
+            System.out.println("Session error: " + e.getMessage());
         }
 
         // ========================================

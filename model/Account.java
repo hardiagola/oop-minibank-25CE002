@@ -4,6 +4,9 @@ import java.util.Objects;
 
 import model.annotation.Id;
 import model.annotation.Positive;
+import exception.BankException;
+import exception.InsufficientFundsException;
+import exception.InvalidAmountException;
 
 public abstract class Account
         implements Transactable, InterestBearing {
@@ -46,26 +49,50 @@ public abstract class Account
     public abstract boolean canWithdraw(long amount);
 
     @Override
-    public void deposit(long amount) {
-        if (active && amount > 0
-                && balance <= Long.MAX_VALUE - amount) {
-            balance += amount;
-            System.out.println("Deposited: Rs. " + amount);
-        } else {
-            System.out.println("Invalid deposit or inactive account.");
+    public void deposit(long amount) throws InvalidAmountException {
+        if (amount <= 0) {
+            throw new InvalidAmountException(
+                    "Deposit amount must be greater than zero.");
         }
+        if (!active) {
+            throw new InvalidAmountException("Account is inactive.");
+        }
+        if (balance > Long.MAX_VALUE - amount) {
+            throw new InvalidAmountException(
+                    "Deposit would overflow balance.");
+        }
+        balance += amount;
+        System.out.println("Deposited: Rs. " + amount);
     }
 
     @Override
-    public boolean withdraw(long amount) {
-        if (active && amount > 0 && canWithdraw(amount)) {
-            balance -= amount;
-            System.out.println("Withdrawn: Rs. " + amount);
-            return true;
+    public void withdraw(long amount)
+            throws InsufficientFundsException, InvalidAmountException {
+        if (amount <= 0) {
+            throw new InvalidAmountException(
+                    "Withdrawal amount must be greater than zero.");
         }
+        if (!active) {
+            throw new InvalidAmountException("Account is inactive.");
+        }
+        if (!canWithdraw(amount)) {
+            long shortfall = Math.max(0, amount - balance);
+            throw new InsufficientFundsException(
+                    "Insufficient funds for withdrawal.", shortfall);
+        }
+        balance -= amount;
+        System.out.println("Withdrawn: Rs. " + amount);
+    }
 
-        System.out.println("Withdrawal failed.");
-        return false;
+    public void transfer(Account to, long amount) throws BankException {
+        try {
+            this.withdraw(amount);
+            to.deposit(amount);
+        } catch (InsufficientFundsException | InvalidAmountException e) {
+            throw e;
+        } finally {
+            System.out.println("Transfer attempt completed.");
+        }
     }
 
     public String getAccountNumber() {
